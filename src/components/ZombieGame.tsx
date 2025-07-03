@@ -5,7 +5,7 @@ import { Card, CardContent } from './ui/card';
 // Interfaces
 interface Position { x: number; y: number; }
 interface Player { x: number; y: number; lives: number; speed: number; weapon: WeaponType; weaponAmmo: number; speedBoosts: number; nukes: number; }
-interface Enemy { id: number; x: number; y: number; speed: number; health: number; maxHealth: number; type: EnemyType; size: number; }
+interface Enemy { id: number; x: number; y: number; speed: number; health: number; maxHealth: number; type: EnemyType; size: number; color: string; }
 interface Bullet { id: number; x: number; y: number; dx: number; dy: number; speed: number; damage: number; type: WeaponType; }
 interface PowerUp { id: number; x: number; y: number; type: PowerUpType; duration?: number; }
 interface Particle { id: number; x: number; y: number; dx: number; dy: number; size: number; life: number; color: string; }
@@ -34,10 +34,10 @@ const MAPS: GameMap[] = [
 ];
 
 const ENEMY_CONFIGS = {
-  zombie: { size: 24, speed: 1.5, health: 1, sprite: '/assets/sprites/zombie.png' },
-  hellhound: { size: 22, speed: 3, health: 2, sprite: '/assets/sprites/hellhound.png' },
-  crawler: { size: 20, speed: 2.5, health: 1, sprite: '/assets/sprites/crawler.png' },
-  boss: { size: 40, speed: 1, health: 10, sprite: '/assets/sprites/boss.png' }
+  zombie: { size: 24, speed: 1.5, health: 1, sprite: '/assets/sprites/zombie.png', color: '#86efac' },
+  hellhound: { size: 22, speed: 3, health: 2, sprite: '/assets/sprites/hellhound.png', color: '#f87171' },
+  crawler: { size: 20, speed: 2.5, health: 1, sprite: '/assets/sprites/crawler.png', color: '#facc15' },
+  boss: { size: 40, speed: 1, health: 10, sprite: '/assets/sprites/boss.png', color: '#a78bfa' }
 };
 
 const WEAPON_CONFIGS = {
@@ -109,7 +109,14 @@ export default function ZombieGame({ onGameOver }: { onGameOver: () => void }) {
       case 'pistol': oscillator.frequency.setValueAtTime(800, ctx.currentTime); oscillator.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.1); break;
       case 'rifle': oscillator.frequency.setValueAtTime(1200, ctx.currentTime); oscillator.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.05); break;
       case 'shotgun': oscillator.frequency.setValueAtTime(600, ctx.currentTime); oscillator.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.2); break;
-      case 'explosion': gainNode.gain.setValueAtTime(0.4, ctx.currentTime); oscillator.type = 'noise'; oscillator.frequency.setValueAtTime(1000, ctx.currentTime); oscillator.frequency.exponentialRampToValueAtTime(1, ctx.currentTime + 0.4); setScreenShake(15); break;
+      case 'explosion':
+        gainNode.gain.setValueAtTime(0.4, ctx.currentTime);
+        // WebAudio OscillatorNode supports only sine, square, sawtooth & triangle. Use square as a harsh explosion-like timbre.
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(60, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(1, ctx.currentTime + 0.4);
+        setScreenShake(15);
+        break;
       case 'powerup': oscillator.frequency.setValueAtTime(440, ctx.currentTime); oscillator.frequency.linearRampToValueAtTime(880, ctx.currentTime + 0.2); break;
       case 'hurt': gainNode.gain.setValueAtTime(0.3, ctx.currentTime); oscillator.frequency.setValueAtTime(200, ctx.currentTime); oscillator.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3); break;
     }
@@ -147,7 +154,7 @@ export default function ZombieGame({ onGameOver }: { onGameOver: () => void }) {
       if (round > 5 && Math.random() < 0.1) type = 'crawler';
       if (round > 0 && round % 10 === 0 && i === 0) type = 'boss';
       const config = ENEMY_CONFIGS[type];
-      newEnemies.push({ id: enemyIdRef.current++, x, y, speed: config.speed * (0.8 + Math.random() * 0.4), health: config.health + Math.floor(round / 3), maxHealth: config.health + Math.floor(round / 3), type, size: config.size });
+      newEnemies.push({ id: enemyIdRef.current++, x, y, speed: config.speed * (0.8 + Math.random() * 0.4), health: config.health + Math.floor(round / 3), maxHealth: config.health + Math.floor(round / 3), type, size: config.size, color: config.color });
     }
     setEnemies(newEnemies);
     setRoundEnemyTarget(newEnemies.length);
